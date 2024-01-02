@@ -9,6 +9,12 @@ A Python library for working with graph structures and implementing various grap
 
 Explore the power of graph algorithms with this easy-to-use Python library!
 
-#How to use
+# How to use
 
 The `Graph` class is inside the graph.py file. The other files show examples of how methods of the class can be used.
+
+# What I learned
+
+* Representing graphs in python
+* Using the `pyvis` library
+* Writing graph algorithms
