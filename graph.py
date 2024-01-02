@@ -156,9 +156,9 @@ class Graph:
                 length : num,
                 path : [src, v1, v2, ..., node1]
                 },
-        node1 : {
+        node2 : {
                 length : num
-                path : [src, v1, v2, ..., node1]
+                path : [src, v1, v2, ..., node2]
                 }
         }
         """

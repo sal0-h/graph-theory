@@ -4,3 +4,5 @@ edges = [[0, 1, 1], [0, 2, 3], [0, 4, 1], [0, 5, 4], [1, 4, 2], [1, 2, 1], [2, 3
 g = Graph(nodes, edges, directed=False, weighted=True)
 g.show('basic.html')
 d = g.shortest_distances_all_pairs()
+for row in d:
+    print(row)
