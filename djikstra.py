@@ -6,7 +6,6 @@ n = 5
 edges=[[0,1,10],[0,2,3],[1,3,2],[2,1,4],[2,3,8],[2,4,2],[3,4,5]]
 src = 1
 g = Graph(list(range(n)), edges, directed=True, weighted=True)
-g.show('basic.html')
 result = g.shortestPath(src)
 #Result is in this formal
 # {
