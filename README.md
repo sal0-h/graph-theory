@@ -7,6 +7,8 @@ A Python library for working with graph structures and implementing various grap
 - Algorithms for finding Eulerian cycles, shortest paths, and solving the Chinese Postman problem.
 - Support for weighted and unweighted graphs.
 
+Also provides a `ActivityNetwork` class that takes in a dependency list as a parameter and creates an `Graph` subclass, `ActivityNetwork`, which is a representation of the project as an Activity-On-Arc network
+
 Explore the power of graph algorithms with this easy-to-use Python library!
 
 # How to use
