@@ -51,8 +51,7 @@ class Graph:
                     adj_mat[node2][node1] += 1
         return adj_mat
 
-
-    def show(self, output_filename):
+    def show(self, output_filename, label_function = None):
         """
         Saves an HTML file locally containing a visualization of the graph
         Returns a pyvis Network instance of the graph.
@@ -72,7 +71,11 @@ class Graph:
             g.add_edges(edge_list)
         else:
             for i in range(len(edge_list)):
-                g.add_edge(edge_list[i][0], edge_list[i][1], label = str(self.edges[i][2]))
+                if label_function == None:
+                    label = str(self.edges[i][2])
+                else:
+                    label = label_function(self.edges[i][2], self.edges[i][3])
+                g.add_edge(edge_list[i][0], edge_list[i][1], label = label)
         g.show(output_filename)
         return g
     
@@ -327,12 +330,145 @@ class Graph:
                 total += 1
         return total
     
+class ActivityNetwork(Graph):
 
-
-
-
-        
-        
-
-
-
+    def __init__(self, dependence_table : dict):
+        #Sample dependence table:
+        '''
+        {
+        "A" : [[], 10],
+        "B" : [[], 6],
+        "C" : [["A"], 7],
+        "D" : [["A"], 9],
+        "E" : [["B"], 10],
+        "F" : [["C", "E"], 3],
+        "G" : [["D", "F"], 6]
+        }
+        '''
+        nodes = []
+        edges = []
+        activities = list(dependence_table.keys())
+        left_activities = set(activities)
+        initial_node_dict = dict()
+        current_node = 0
+        for activity in activities:
+            dependence = tuple(sorted(dependence_table[activity][0]))
+            for act in dependence:
+                if act in left_activities: 
+                    left_activities.remove(act)
+            if dependence in initial_node_dict:
+                initial_node_dict[dependence][0].append(activity)
+            else:
+                initial_node_dict[dependence] = [[activity], current_node]
+                current_node += 1
+        left_activities = tuple(sorted(left_activities))
+        initial_node_dict[left_activities] = [[], current_node]
+        node_dict = dict()
+        for node in initial_node_dict:
+            node_dict[initial_node_dict[node][1]] = [set(node), set(initial_node_dict[node][0])]
+        for node in node_dict:
+            print(node, node_dict[node])
+        nodes = list(node_dict.keys())
+        # using K. Neumann algorithm to add dummies
+        # Neumann, K. (1999). A Heuristic Procedure for Constructing an Activity-on-Arc Project Network. In: Gaul, W., Schader, M. (eds) Mathematische Methoden der Wirtschaftswissenschaften. Physica, Heidelberg. https://doi.org/10.1007/978-3-662-12433-8_30
+        dummy_counter = 0
+        dummies_left = True
+        while dummies_left:
+            #Checking if if theres a precursor set which is a subset of another
+            #(Condition 1 of step 2)
+            #If so, find maximum such set
+            maximum_set_length = -math.inf
+            maximum_nodes = None
+            for node1 in node_dict:
+                for node2 in node_dict:
+                    p1, p2 = node_dict[node1][0], node_dict[node2][0]
+                    if node1 != node2 and p1 != set() and p1.issubset(p2) and \
+                        len(p1) > maximum_set_length:
+                        maximum_set_length = len(p1)
+                        maximum_nodes = (node1, node2)
+            if maximum_nodes != None:
+                node1, node2 = maximum_nodes
+                p1, p2 = node_dict[node1][0], node_dict[node2][0]
+                for activity in copy.copy(p2):
+                    if activity in p1:
+                        p2.remove(activity)
+                        p2.add(str(dummy_counter))
+                node_dict[node1][1].add(str(dummy_counter))
+                dummy_counter += 1
+            else:
+                # Check if there are two precursors such that their intersection is not empty
+                # (condition 2 of step 2)
+                # if so, find largest such intersection
+                maximum_intersection_length = 0
+                maximum_nodes = None
+                for node1 in node_dict:
+                    for node2 in node_dict:
+                        p1, p2 = node_dict[node1][0], node_dict[node2][0]
+                        intersection = p1 & p2
+                        if node1 != node2 and p1 != p2 and len(intersection) > maximum_intersection_length:
+                            maximum_intersection_length = len(intersection)
+                            maximum_nodes = (node1, node2)
+                if maximum_nodes != None:
+                    node1, node2 = maximum_nodes
+                    p1, p2 = node_dict[node1][0], node_dict[node2][0]
+                    p3 = p1 & p2
+                    new_node = nodes[-1] + 1
+                    for activity in copy.copy(p1):
+                        if activity in p3:
+                            p1.remove(activity)
+                            p1.add(str(dummy_counter))
+                    for activity in copy.copy(p2):
+                        if activity in p3:
+                            p2.remove(activity)
+                            p2.add(str(dummy_counter + 1))
+                    f3 = {str(dummy_counter), str(dummy_counter + 1)}
+                    node_dict[new_node] = [p3, f3]
+                    dummy_counter += 2
+                else:
+                    # Check if there is precursor and follower which have more than 1 common activity
+                    # (condition 3 of step 2)
+                    nodes_found = None
+                    for node1 in node_dict:
+                        for node2 in node_dict:
+                            p1, f2 = node_dict[node1][0], node_dict[node2][1]
+                            intersection = p1 & f2
+                            if node1 != node2 and len(intersection) > 1:
+                                nodes_found = (node1, node2)
+                    if nodes_found != None:
+                        node1, node2 = nodes_found
+                        p1, f2 = node_dict[node1][0], node_dict[node2][1]
+                        intersection = p1 & p2
+                        r = len(intersection)
+                        for i, activity in enumerate(intersection):
+                            if i < r - 1:
+                                p1.remove(activity)
+                                p1.add(str(dummy_counter + i))
+                                new_node = nodes[-1] + 1
+                                p3 = {activity}
+                                f3 = {str(dummy_counter + i)}
+                                node_dict[new_node] = [p3, f3]
+                        dummy_counter += r - 1
+                    else: 
+                        dummies_left = False
+        for node in node_dict:
+            print(node, node_dict[node])
+        #Checking every node and seeing what activities come into it
+        for in_node in nodes:
+            #Check every incoming activity for node
+            for incoming_activity in node_dict[in_node][0]:
+                #For each activity, checks all other nodes and finds their outgoing activities
+                for out_node in nodes:
+                    outgoing_activities = node_dict[out_node][1]
+                    #if it finds an outgoing activity in any other nodes that match the incoming activity in current node
+                    if out_node != in_node and incoming_activity in outgoing_activities:
+                        if incoming_activity not in dependence_table:
+                            edges.append([out_node, in_node, 0, ""])    
+                        else:
+                            edges.append([out_node, in_node, dependence_table[incoming_activity][1], incoming_activity])
+                        break
+        super().__init__(nodes, edges, directed=True, weighted=True)
+    
+    def show(self, output_filename):
+        def label_function(weight, name):
+            return f"{name}({weight})"
+        return super().show(output_filename, label_function)
