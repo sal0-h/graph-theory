@@ -84,6 +84,38 @@ node2 : {
 
 * Returns the sum of all weights of the edges of the graph
 
+## Minimum spanning tree algorithms
+Coming soon...
+
+## To instantiate an activity network
+`g = ActivityNetwork(dependence_table : dict)`
+
+* `dependence_table` is a dictionary of the following format:
+```
+{
+activity : [list_of_precursors, weight],
+...
+}
+```
+For example:
+```
+{
+"A" : [[], 10],
+"B" : [[], 9],
+"C" : [["A", "B"], 3],
+"D" : [["B"], 5],
+"E" : [["B"], 6],
+"F" : [["C"], 8],
+"G" : [["C", "D"], 10],
+"H" : [["E"], 10],
+}
+```
+* Returns an ActivityNetwork object, which is an instance of a graph
+* You can show the model of the activity network using the aforementioned `.show(output_filename)` method
+
+## Critital path algorithms
+Coming soon...
+
 # What I learned
 
 * Representing graphs in python
