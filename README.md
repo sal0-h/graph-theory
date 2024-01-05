@@ -13,7 +13,76 @@ Explore the power of graph algorithms with this easy-to-use Python library!
 
 # How to use
 
-The `Graph` class is inside the graph.py file. The other files show examples of how methods of the class can be used.
+The `Graph` and `ActivityNetwork` class is inside the graph.py file. The other files show examples of how methods of the class can be used.
+
+## To instantiate Graph:
+`g = Graph(nodes : list, edges : list, directed=False, weighted=False)`
+
+* `nodes` is a list of intergers of strings that represent the graph nodes
+* `edges` is a list of items of following format: 
+* * `[[node1, node2, weight1], [node2, node3, weight2]]` if graph is weighted. This edge list defines an edge between node1 and node 2 with weight1, and an edge between node2 and node3 with weight2. If the graph is directed, then this defines an arc, which only goes from one node to another and not the other way. An unweighted graph will omit the weight1 and weight2
+
+## Adjacency dictionary
+`adj_dict = g.adjacency_dict()`
+
+* Returns an adjacency dictionary for the graph
+
+## Adjacency matrix
+`adj_mat = g.adjacency_matrix()`
+
+* Returns an adjacency matrix for the graph
+* Only works for graph where nodes are ordered from 0 to n - 1 where n is the number of nodes
+
+## Graph visual representation
+`g.show(output_filename : str)`
+
+* Takes in a .html filename as parameter
+* Creates an html file with given filename in working directory showing the graph
+* Will try to do something weird and open a random tab in the browser, Ignore
+
+## Finding a eulerian cycle in a graph
+`cycle = g.find_eulerian_cycle()`
+
+* If a eulerian cycle exists in the graph, returns a list of the nodes of such cycle
+* Othwerwise, returns `None`
+
+## Finding shortest path from a node
+`paths = g.shortest_path(src)`
+
+* From the given source node `src` finds the shortest paths to all other nodes in the graph
+* Used Djikstra's algorithm
+* Returns a dictionary of this format:
+```
+{
+node1 : {
+        length : num,
+        path : [src, v1, v2, ..., node1]
+        },
+node2 : {
+        length : num
+        path : [src, v1, v2, ..., node2]
+        }
+}
+```
+
+## Finding a shortest distance matrix between all nodes
+`distance_matrix = g.shortest_distances_all_pairs()`
+
+* Returns a 2d list where value of `distance_matrix[i][j]` is shortest dist from node i to node j
+* Uses the Floyd-Warshall algorithm
+
+## Chinese postman (Route inspection algorithm)
+`new_g = g.chinese_postman()`
+
+* Returns a tuple `(new_g, duplicated_edges)`
+* `new_g` -> a Eulerian pseudogaph of minimum weight, obtained by duplicating edges of original graph
+* `duplicated_edges` -> a list of edges that were duplicated to achieve the result
+* By running `cycle = new_g.find_eulerian_cycle()`, you can find the shortest possible inspection route from the graph `g`
+
+## Total graph weight
+`weight = g.total_graph_weight`
+
+* Returns the sum of all weights of the edges of the graph
 
 # What I learned
 
