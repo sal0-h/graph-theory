@@ -345,14 +345,38 @@ class ActivityNetwork(Graph):
         "G" : [["D", "F"], 6]
         }
         '''
-        nodes = []
+        self.dependence_table = dependence_table
+        self.node_dict = self.event_dict()
+        nodes = list(self.node_dict.keys())
         edges = []
-        activities = list(dependence_table.keys())
+        #Based on the node dictionary with the associated precursor and follower sets, creates edges
+        #Checking every node and seeing what activities come into it
+        for in_node in nodes:
+            #Check every incoming activity for node
+            for incoming_activity in self.node_dict[in_node][0]:
+                #For each activity, checks all other nodes and finds their outgoing activities
+                for out_node in nodes:
+                    outgoing_activities = self.node_dict[out_node][1]
+                    #if it finds an outgoing activity in any other nodes that match the incoming activity in current node
+                    if out_node != in_node and incoming_activity in outgoing_activities:
+                        if incoming_activity not in dependence_table:
+                            edges.append([out_node, in_node, 0, ""])    
+                        else:
+                            edges.append([out_node, in_node, dependence_table[incoming_activity][1], incoming_activity])
+                        break
+        #initiate a graph object using the nodes and edges constructed
+        super().__init__(nodes, edges, directed=True, weighted=True)
+    
+    def event_dict(self):
+        '''
+        #Makes a dictionary of nodes with corresponding precursor and follower activity sets
+        '''
+        activities = list(self.dependence_table.keys())
         left_activities = set(activities)
         initial_node_dict = dict()
         current_node = 0
         for activity in activities:
-            dependence = tuple(sorted(dependence_table[activity][0]))
+            dependence = tuple(sorted(self.dependence_table[activity][0]))
             for act in dependence:
                 if act in left_activities: 
                     left_activities.remove(act)
@@ -366,16 +390,22 @@ class ActivityNetwork(Graph):
         node_dict = dict()
         for node in initial_node_dict:
             node_dict[initial_node_dict[node][1]] = [set(node), set(initial_node_dict[node][0])]
-        for node in node_dict:
-            print(node, node_dict[node])
-        nodes = list(node_dict.keys())
-        # using K. Neumann algorithm to add dummies
-        # Neumann, K. (1999). A Heuristic Procedure for Constructing an Activity-on-Arc Project Network. In: Gaul, W., Schader, M. (eds) Mathematische Methoden der Wirtschaftswissenschaften. Physica, Heidelberg. https://doi.org/10.1007/978-3-662-12433-8_30
+        self.__add_dummies(node_dict)
+        print(node_dict)
+        return node_dict
+    
+    def __add_dummies(self, node_dict):
+        '''
+        Using K. Neumann algorithm to add dummies to the event dict
+        Neumann, K. (1999). A Heuristic Procedure for Constructing an Activity-on-Arc Project Network. In: Gaul, W., Schader, M. (eds) Mathematische Methoden der Wirtschaftswissenschaften. Physica, Heidelberg. https://doi.org/10.1007/978-3-662-12433-8_30
+        The premise is to check for 3 conditions and keep adding dummies until they are satisfied
+        '''
         dummy_counter = 0
         dummies_left = True
+        nodes = list(node_dict.keys())
         while dummies_left:
             #Checking if if theres a precursor set which is a subset of another
-            #(Condition 1 of step 2)
+            #(Condition 1)
             #If so, find maximum such set
             maximum_set_length = -math.inf
             maximum_nodes = None
@@ -397,7 +427,7 @@ class ActivityNetwork(Graph):
                 dummy_counter += 1
             else:
                 # Check if there are two precursors such that their intersection is not empty
-                # (condition 2 of step 2)
+                # (condition 2)
                 # if so, find largest such intersection
                 maximum_intersection_length = 0
                 maximum_nodes = None
@@ -426,7 +456,7 @@ class ActivityNetwork(Graph):
                     dummy_counter += 2
                 else:
                     # Check if there is precursor and follower which have more than 1 common activity
-                    # (condition 3 of step 2)
+                    # (condition 3)
                     nodes_found = None
                     for node1 in node_dict:
                         for node2 in node_dict:
@@ -448,27 +478,103 @@ class ActivityNetwork(Graph):
                                 f3 = {str(dummy_counter + i)}
                                 node_dict[new_node] = [p3, f3]
                         dummy_counter += r - 1
+                    #if all 3 conditions are satisfied, no more dummies needed
                     else: 
                         dummies_left = False
-        for node in node_dict:
-            print(node, node_dict[node])
-        #Checking every node and seeing what activities come into it
-        for in_node in nodes:
-            #Check every incoming activity for node
-            for incoming_activity in node_dict[in_node][0]:
-                #For each activity, checks all other nodes and finds their outgoing activities
-                for out_node in nodes:
-                    outgoing_activities = node_dict[out_node][1]
-                    #if it finds an outgoing activity in any other nodes that match the incoming activity in current node
-                    if out_node != in_node and incoming_activity in outgoing_activities:
-                        if incoming_activity not in dependence_table:
-                            edges.append([out_node, in_node, 0, ""])    
-                        else:
-                            edges.append([out_node, in_node, dependence_table[incoming_activity][1], incoming_activity])
-                        break
-        super().__init__(nodes, edges, directed=True, weighted=True)
+
+    def calculate_early_late_event_times(self):
+        '''
+        Returns a dictionary with early and late event times for each node in this format:
+        {node : [early_event_times, late_event_time], ...}
+        '''
+        times = {node : [-math.inf, math.inf] for node in self.nodes}
+        self.__forward_pass(times)
+        self.__backward_pass(times)
+        return times
+    
+    def __forward_pass(self, times):
+        '''
+        Performs a breadth-first algorithm on network to calculate the early event times
+        '''
+        source = 0
+        queue = [source]
+        times[source][0] = 0
+        adj = self.adjacency_dict()
+        while queue != []:
+            current_node = queue.pop(0)
+            for (node2, weight, activity) in adj[current_node]:
+                times[node2][0] = max(times[current_node][0] + weight, times[node2][0])
+                queue.append(node2)
+
+    def __backward_pass(self, times):
+        '''
+        Performs a breadth-first algorithm on a network with inversed arcs
+        to calculate the late event times
+        '''
+        source = self.nodes[-1]
+        queue = [source]
+        times[source][1] = times[source][0]
+        adj = self.reverse_adjacency_dict()
+        while queue != []:
+            current_node = queue.pop(0)
+            for (node2, weight, activity) in adj[current_node]:
+                times[node2][1] = min(times[current_node][1] - weight, times[node2][1])
+                queue.append(node2)
+
+    def float_of_activity(self, activity):
+        '''
+        Returns the float of an activity
+        Total float of an activity is the amount of time that its start may be delayed 
+        without affecting the duration of the project
+        '''
+        times = self.calculate_early_late_event_times()
+        float_edge = None
+        for edge in self.edges:
+            if edge[3] == activity:
+                float_edge = edge
+        if float_edge == None:
+            return None
+        else:
+            node1, node2, weight, activity = float_edge[0], float_edge[1], float_edge[2], float_edge[3] 
+            return times[node2][1] - times[node1][0] - weight
+        
+    def total_project_duration(self):
+        """
+        Returns the total duration of the project
+        """
+        times = self.calculate_early_late_event_times()
+        return times[self.nodes[-1]][0]
+
+    def adjacency_dict(self):
+        '''
+        Returns an adjacency dictionary for an activity network
+        '''
+        adj_dict = dict()
+        for node in self.nodes:
+            adj_dict[node] = []
+        for edge in self.edges:
+            node1, node2, weight, activity = edge[0], edge[1], edge[2], edge[3]
+            adj_dict[node1].append((node2, weight, activity))
+        return adj_dict
+    
+    def reverse_adjacency_dict(self):
+        '''
+        Returns an adjacency dictionary for an activity network
+        But instead of each node having the nodes part of its outdegree
+        It has the nodes that are part of its indegree
+        '''
+        adj_dict = dict()
+        for node in self.nodes:
+            adj_dict[node] = []
+        for edge in self.edges:
+            node1, node2, weight, activity = edge[0], edge[1], edge[2], edge[3]
+            adj_dict[node2].append((node1, weight, activity))
+        return adj_dict
     
     def show(self, output_filename):
+        '''
+        Creates a .html file with output_filename in working directory containing a representation of the network
+        '''
         def label_function(weight, name):
             return f"{name}({weight})"
         return super().show(output_filename, label_function)

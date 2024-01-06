@@ -64,7 +64,7 @@ dependence_table = {
 
 
 net4 = ActivityNetwork(dependence_table)
-# net4.show("basic.html")
+net4.show("basic.html")
 
 dependence_table = {
     "A" : [[], 10],
@@ -79,3 +79,45 @@ dependence_table = {
 
 net5 = ActivityNetwork(dependence_table)
 # net5.show("basic.html")
+
+depend = {
+"A" : [[], 8],
+"B" : [[], 6],
+"C" : [["A"], 9],
+"D" : [["A"], 7],
+"E" : [["B"], 5],
+"F" : [["C"], 4],
+"G" : [["D"], 5],
+"H" : [["E"], 8],
+"I" : [["F", "D"], 5],
+"J" : [["I", "G", "H"], 5],
+"K" : [["E"], 5],
+}
+
+net = ActivityNetwork(depend)
+# net.show('basic.html')
+
+times = net.calculate_early_late_event_times()
+for node in times:
+    print(node, ': ', times[node][0], times[node][1])
+
+depend = {
+"A" : [[], 3],
+"B" : [["A"], 6],
+"C" : [["A"], 4],
+"D" : [["B"], 2],
+"E" : [["C"], 1],
+"F" : [["C"], 4],
+"G" : [["D"], 5],
+"H" : [["E", "B"], 4],
+}
+
+net = ActivityNetwork(depend)
+# net.show('basic.html')
+
+times = net.calculate_early_late_event_times()
+for node in times:
+    print(node, ': ', times[node][0], times[node][1])
+
+for activity in depend:
+    print(activity, ": ", net.float_of_activity(activity))
