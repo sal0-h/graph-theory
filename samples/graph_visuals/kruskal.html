@@ -40,6 +40,11 @@
                  float: left;
              }
 
+             
+
+             
+
+             
         </style>
     </head>
 
@@ -83,8 +88,8 @@
                   
 
                   // parsing and collecting nodes and edges from the python
-                  nodes = new vis.DataSet([{"color": "#97c2fc", "id": ".0.", "label": ".0.", "shape": "dot", "title": "0"}, {"color": "#97c2fc", "id": ".1.", "label": ".1.", "shape": "dot", "title": "1"}, {"color": "#97c2fc", "id": ".2.", "label": ".2.", "shape": "dot", "title": "2"}, {"color": "#97c2fc", "id": ".3.", "label": ".3.", "shape": "dot", "title": "3"}, {"color": "#97c2fc", "id": ".4.", "label": ".4.", "shape": "dot", "title": "4"}, {"color": "#97c2fc", "id": ".5.", "label": ".5.", "shape": "dot", "title": "5"}, {"color": "#97c2fc", "id": ".6.", "label": ".6.", "shape": "dot", "title": "6"}, {"color": "#97c2fc", "id": ".7.", "label": ".7.", "shape": "dot", "title": "7"}, {"color": "#97c2fc", "id": ".8.", "label": ".8.", "shape": "dot", "title": "8"}]);
-                  edges = new vis.DataSet([{"from": ".0.", "to": ".4."}, {"from": ".1.", "to": ".4."}, {"from": ".1.", "to": ".5."}, {"from": ".1.", "to": ".7."}, {"from": ".7.", "to": ".8."}, {"from": ".5.", "to": ".8."}, {"from": ".4.", "to": ".3."}, {"from": ".5.", "to": ".3."}, {"from": ".3.", "to": ".6."}, {"from": ".6.", "to": ".8."}, {"from": ".8.", "to": ".2."}, {"from": ".5.", "to": ".4."}]);
+                  nodes = new vis.DataSet([{"color": "#97c2fc", "id": ".A.", "label": ".A.", "shape": "dot", "title": "A"}, {"color": "#97c2fc", "id": ".B.", "label": ".B.", "shape": "dot", "title": "B"}, {"color": "#97c2fc", "id": ".C.", "label": ".C.", "shape": "dot", "title": "C"}, {"color": "#97c2fc", "id": ".D.", "label": ".D.", "shape": "dot", "title": "D"}, {"color": "#97c2fc", "id": ".E.", "label": ".E.", "shape": "dot", "title": "E"}]);
+                  edges = new vis.DataSet([{"from": ".A.", "label": ".1.", "to": ".B."}, {"from": ".D.", "label": ".2.", "to": ".E."}, {"from": ".B.", "label": ".3.", "to": ".C."}, {"from": ".C.", "label": ".4.", "to": ".D."}, {"from": ".A.", "label": ".5.", "to": ".E."}]);
 
                   nodeColors = {};
                   allNodes = nodes.get({ returnType: "Object" });

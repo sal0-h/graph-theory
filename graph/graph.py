@@ -2,6 +2,11 @@ from pyvis.network import Network
 from itertools import permutations
 import copy, math
 
+class UnweightedGraphError(Exception):
+    def __init__(self, message="Attempting to find MST of unweighted graph"):
+        self.message = message
+        super().__init__(self.message)
+
 class Graph:
     def __init__(self, nodes : list, edges : list, directed=False, weighted=False):
         self.nodes = nodes #list of nodes - [node, node, node]
@@ -51,30 +56,34 @@ class Graph:
                     adj_mat[node2][node1] += 1
         return adj_mat
 
-    def show(self, output_filename, label_function = None):
+    def show(self, output_filename, node_name_fn = None, edge_name_fn = None):
         """
         Saves an HTML file locally containing a visualization of the graph
         Returns a pyvis Network instance of the graph.
         """
         g = Network(directed=self.directed)
         g.set_edge_smooth('dynamic')
+        if node_name_fn == None:
+            def node_name_fn(name):
+                return f".{name}."
         node_list = []
         for i in self.nodes:
-            node_list.append(f".{i}.")
+            node_list.append(f"{node_name_fn(i)}")
         g.add_nodes(node_list, title = [str(i) for i in self.nodes])
         edge_list = copy.deepcopy(self.edges)
         for i, edg in enumerate(edge_list):
-            start = f".{edg[0]}."
-            end = f".{edg[1]}."
+            start = f"{node_name_fn(edg[0])}"
+            end = f"{node_name_fn(edg[1])}"
             edge_list[i] = [start, end]
         if not self.weighted:
             g.add_edges(edge_list)
         else:
             for i in range(len(edge_list)):
-                if label_function == None:
-                    label = str(self.edges[i][2])
+                if edge_name_fn == None:
+                    label = str(node_name_fn(self.edges[i][2]))
                 else:
-                    label = label_function(self.edges[i][2], self.edges[i][3])
+                    label = edge_name_fn(node_name_fn(self.edges[i][2]), 
+                                         node_name_fn(self.edges[i][3]))
                 g.add_edge(edge_list[i][0], edge_list[i][1], label = label)
         g.show(output_filename)
         return g
@@ -153,6 +162,7 @@ class Graph:
         """
         Find the shortest path length between src and all nodes, and the corresponding paths
         Works on directed and undirected graphs
+        Uses Djikstras algorithm
         Returns a disctionary of this format:
         {
         node1 : {
@@ -184,9 +194,8 @@ class Graph:
             labels[node] = [math.inf, None]
         labels[src] = [0, None]
 
-        #Repeat until structure
         #Runs until all nodes are assigned a permanent label
-        while True:
+        while len(temp_vertices) > 0:
             #Takes most recent node which got assigned permanent label
             current_vertex = recent_vertex
             #v - vertex, w - weight
@@ -212,8 +221,6 @@ class Graph:
             else:
                 recent_vertex = min_vertex
                 temp_vertices.remove(min_vertex)
-            if temp_vertices == set():
-                break
         #Create an output dictionary
         output = dict()
         for v in self.nodes:
@@ -236,7 +243,7 @@ class Graph:
         """
         Works on a matrix representation of the graph
         Returns a 2d list where value of m[i][j] is shortest dist from vi to vj
-        Assumes that self.nodes is a list of nodes from 0 to n.
+        Assumes that self.nodes is a list of nodes from 0 to n (because it uses an adj matrix).
         """
         adj = self.adjacency_matrix()
         d = [[0 for node in self.nodes] for node in self.nodes]
@@ -329,6 +336,29 @@ class Graph:
             else:
                 total += 1
         return total
+    
+    def kruskal(self):
+        """
+        Returns a Minimum Spanning Tree obtained by Kruskal's algorithm
+        Graph must be weighted
+        """
+        if not self.weighted: raise UnweightedGraphError()
+        # Initialize the labels for each node
+        # Useful in future to avoid creating cycles
+        node_labels = {}
+        for i, node in enumerate(self.nodes):
+            node_labels[node] = i
+        # Get the edges sorted in order of the weights
+        graph_edges = sorted(self.edges, key=lambda x: x[2], reverse=True)
+        
+        k = 1
+        tree_edges = [graph_edges.pop()]
+        while k < len(self.nodes):
+            next_edge = graph_edges.pop()
+            if node_labels[next_edge[0]] != node_labels[next_edge[1]]:
+                tree_edges.append(next_edge)
+                k+=1
+        return Graph(self.nodes, tree_edges, weighted=True)
     
 class ActivityNetwork(Graph):
 
