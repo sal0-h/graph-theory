@@ -86,7 +86,9 @@ node2 : {
 * Returns the sum of all weights of the edges of the graph
 
 ## Minimum spanning tree algorithms
-Coming soon...
+`T = g.kruskal()`
+
+* Returns a Minimum Spanning Tree obtained from g via Kruskal's algorithm
 
 ## To instantiate an activity network
 `net = ActivityNetwork(dependence_table : dict)`
