@@ -79,10 +79,9 @@ class Graph:
         else:
             for i in range(len(edge_list)):
                 if edge_name_fn == None:
-                    label = str(node_name_fn(self.edges[i][2]))
+                    label = str(self.edges[i][2])
                 else:
-                    label = edge_name_fn(node_name_fn(self.edges[i][2]), 
-                                         node_name_fn(self.edges[i][3]))
+                    label = edge_name_fn(self.edges[i][2])
                 g.add_edge(edge_list[i][0], edge_list[i][1], label = label)
         g.show(output_filename, notebook=False)
         return g
@@ -161,7 +160,7 @@ class Graph:
         """
         Find the shortest path length between src and all nodes, and the corresponding paths
         Works on directed and undirected graphs
-        Uses Djikstras algorithm
+        Uses Dijkstras algorithm
         Returns a disctionary of this format:
         {
         node1 : {
@@ -184,7 +183,7 @@ class Graph:
             for node1 in adj:
                 for i, node2 in enumerate(adj[node1]):
                     adj[node1][i] = (node2, 1)
-        #Each vertex has a lable
+        #Each vertex has a label
         #label[0] -> distance
         #label[1] -> preceding vertex
         labels = dict()
