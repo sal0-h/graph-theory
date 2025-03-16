@@ -64,8 +64,7 @@ class Graph:
         g = Network(directed=self.directed)
         g.set_edge_smooth('dynamic')
         if node_name_fn == None:
-            def node_name_fn(name):
-                return f".{name}."
+            node_name_fn = lambda name: f"{name}."
         node_list = []
         for i in self.nodes:
             node_list.append(f"{node_name_fn(i)}")
@@ -85,7 +84,7 @@ class Graph:
                     label = edge_name_fn(node_name_fn(self.edges[i][2]), 
                                          node_name_fn(self.edges[i][3]))
                 g.add_edge(edge_list[i][0], edge_list[i][1], label = label)
-        g.show(output_filename)
+        g.show(output_filename, notebook=False)
         return g
     
     def find_eulerian_cycle(self):
@@ -605,6 +604,4 @@ class ActivityNetwork(Graph):
         '''
         Creates a .html file with output_filename in working directory containing a representation of the network
         '''
-        def label_function(weight, name):
-            return f"{name}({weight})"
-        return super().show(output_filename, label_function)
+        return super().show(output_filename, edge_name_fn = lambda weight, name: f"{name}{weight}")
